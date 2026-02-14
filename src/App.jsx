@@ -29,9 +29,7 @@ const App = () => {
     setIsProcessing(true);
     setError(null);
 
-    const GEMINI_KEY = import.meta.env.VITE_GEMINI_KEY;
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent`;
-
+    
     const promptText = `
       SYSTEM ROLE:
       You are 'Overthinkr', a world-class expert in digital linguistics and generational subtext. 
@@ -62,18 +60,15 @@ const App = () => {
         ]
       }
     `;
-
-    try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": GEMINI_KEY
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: promptText }] }]
-        })
-      });
+try {
+    const response = await fetch("/api/analyze", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ promptText })
+    });
+    
 
       const data = await response.json();
       const rawJson = data.candidates[0].content.parts[0].text;
