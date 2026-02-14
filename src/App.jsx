@@ -29,7 +29,7 @@ const App = () => {
     setIsProcessing(true);
     setError(null);
 
-    const GEMINI_KEY = ""; 
+    const GEMINI_KEY = import.meta.env.VITE_GEMINI_KEY;
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent`;
 
     const promptText = `
