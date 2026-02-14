@@ -9,7 +9,6 @@ const App = () => {
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
-  // --- 1. OCR Logic ---
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -18,36 +17,48 @@ const App = () => {
     try {
       const { data: { text } } = await Tesseract.recognize(file, 'eng');
       setText(text.trim());
-    } catch (err) {
-      setError("Failed to read image. Try pasting text manually.");
+    } catch {
+      setError("Failed to read image.");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // --- 2. The Gemini API Logic ---
   const analyzeTone = async () => {
     if (!text) return;
     setIsProcessing(true);
     setError(null);
 
-    // PASTE YOUR GEMINI KEY HERE
     const GEMINI_KEY = ""; 
     const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent`;
 
     const promptText = `
-      You are 'Overthinkr', an expert in digital linguistics. Analyze this text: "${text}"
-      Return a valid JSON object ONLY. 
-      Format:
+      SYSTEM ROLE:
+      You are 'Overthinkr', a world-class expert in digital linguistics and generational subtext. 
+      Your goal is to decode the hidden emotional meaning in short, ambiguous text messages.
+
+      SLANG & GENERATIONAL CONTEXT:
+      - Recognize Gen Z and Gen Alpha slang (e.g., 'rizz', 'gyatt', 'cap', 'bet', 'delulu', 'pookie', 'skibidi').
+      - Interpret 'no cap' as 'truthfully' and 'cap' as a 'lie'.
+      - Flag 'leaving someone on read' or 'dry texting' (very short replies to long messages) as significant red flag indicators.
+      - Recognize that punctuation (like a period at the end of a one-word "Sure.") in casual chat often signals high tension.
+
+      TASK:
+      Analyze the following text message: "${text}"
+
+      OUTPUT FORMATTING RULES:
+      - Return a valid JSON object ONLY. Do not include conversational filler or explanations outside the JSON.
+      - Use the exact JSON structure provided below:
+
       {
-        "tone": "String",
-        "score": Number(1-10),
-        "explanation": "Short analysis",
-        "confidence": Number(1-100),
+        "tone": "String (e.g., 'Passive-Aggressive', 'Low-Key Mad', 'High Rizz', etc.)",
+        "score": Number (1-10, where 10 is maximum emotional tension or 'Red Flag'),
+        "explanation": "A short, insightful analysis of the subtext and slang used.",
+        "confidence": Number (1-100),
         "replies": [
-          {"type": "Confident", "msg": "text"},
-          {"type": "Calm", "msg": "text"},
-          {"type": "Witty", "msg": "text"}
+          {"type": "Confident", "msg": "A mature, self-assured response."},
+          {"type": "Calm", "msg": "A neutral, de-escalating response."},
+          {"type": "Witty", "msg": "A clever response using appropriate slang if relevant."}
         ]
       }
     `;
@@ -55,7 +66,7 @@ const App = () => {
     try {
       const response = await fetch(API_URL, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "x-goog-api-key": GEMINI_KEY
         },
@@ -64,122 +75,149 @@ const App = () => {
         })
       });
 
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
-      }
-
       const data = await response.json();
-      
-      // Check if response has the expected structure
-      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
-        console.error("Unexpected API response structure:", data);
-        throw new Error("Invalid response from Gemini API");
-      }
-      
-      // Gemini returns data in candidates[0].content.parts[0].text
       const rawJson = data.candidates[0].content.parts[0].text;
       const result = JSON.parse(rawJson);
-      
+
       const icons = {
-        Confident: <ShieldCheck size={16}/>,
-        Calm: <Zap size={16}/>,
-        Witty: <Sparkles size={16}/>
+        Confident: <ShieldCheck size={16} />,
+        Calm: <Zap size={16} />,
+        Witty: <Sparkles size={16} />
       };
 
       result.replies = result.replies.map(r => ({
         ...r,
-        icon: icons[r.type] || <MessageSquare size={16}/>
+        icon: icons[r.type] || <MessageSquare size={16} />
       }));
 
       setAnalysis(result);
     } catch (err) {
-      setError("Gemini had a brain freeze. Check your API key or connection.");
-      console.error(err);
+      setError("Gemini error. Check API key or backend.");
     } finally {
       setIsProcessing(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-slate-900 font-sans pb-20 px-4">
-      <nav className="p-6 max-w-4xl mx-auto flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <div className="bg-indigo-600 p-2 rounded-lg text-white">
-            <MessageSquare size={20} />
-          </div>
-          <span className="text-2xl font-black tracking-tighter italic text-indigo-600">Overthinkr.</span>
-        </div>
+    <div className="relative min-h-screen overflow-hidden text-white">
+
+      {/* Animated Conic Gradient */}
+      <div className="absolute inset-0 animate-gradient bg-[conic-gradient(at_top_left,_#ff00cc,_#3333ff,_#00ffcc,_#ff6600,_#ff00cc)] opacity-80"></div>
+
+      {/* Floating Blobs */}
+      <div className="absolute w-[500px] h-[500px] bg-pink-500 rounded-full blur-[140px] opacity-40 animate-float-slow"></div>
+      <div className="absolute right-0 top-1/3 w-[600px] h-[600px] bg-blue-500 rounded-full blur-[150px] opacity-40 animate-float-medium"></div>
+      <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-green-400 rounded-full blur-[140px] opacity-30 animate-float-fast"></div>
+
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-xl"></div>
+
+      <nav className="relative z-10 p-6 max-w-4xl mx-auto flex items-center gap-3">
+        <MessageSquare size={22} />
+        <span className="text-2xl font-semibold tracking-tight">
+          Overthinkr
+        </span>
       </nav>
 
-      <main className="max-w-xl mx-auto mt-8">
-        <header className="text-center mb-10">
-          <h2 className="text-4xl font-extrabold mb-3 tracking-tight">Decode the subtext.</h2>
-          <p className="text-slate-500 italic">"Is that period aggressive or just grammar?"</p>
+      <main className="relative z-10 max-w-xl mx-auto px-6 pt-10 pb-24">
+
+        <header className="mb-12">
+          <h1 className="text-4xl font-semibold tracking-tight">
+            Decode the subtext.
+          </h1>
+          <p className="text-gray-300 mt-3 text-sm">
+            Between the lines. Beneath the tone.
+          </p>
         </header>
 
-        <div className="bg-white rounded-[2rem] shadow-2xl shadow-indigo-100 border border-slate-100 p-6 mb-8 transition-all">
+        {/* Glass Input Card */}
+        <div className="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl p-6">
+
           <textarea
-            className="w-full bg-slate-50 border-none rounded-2xl p-5 text-lg focus:ring-2 focus:ring-indigo-500 outline-none transition min-h-[140px] resize-none"
-            placeholder="Paste that text here..."
+            className="w-full bg-black/40 border border-white/20 rounded-xl p-4 text-white placeholder-gray-400 focus:border-white/40 outline-none transition min-h-[140px] resize-none"
+            placeholder="Paste the message..."
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
 
-          <div className="flex flex-col sm:flex-row gap-3 mt-4">
-            <button 
+          <div className="flex flex-col sm:flex-row gap-3 mt-5">
+            <button
               onClick={() => fileInputRef.current.click()}
-              className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-4 rounded-2xl transition"
+              className="flex-1 bg-white/10 hover:bg-white/20 border border-white/20 py-3 rounded-xl transition"
             >
-              <Upload size={18} /> Screenshot
+              Screenshot
             </button>
-            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
-            
-            <button 
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleImageUpload}
+            />
+
+            <button
               onClick={analyzeTone}
               disabled={isProcessing || !text}
-              className="flex-[2] bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold py-4 rounded-2xl shadow-lg transition flex items-center justify-center gap-2"
+              className="flex-[2] bg-white text-black hover:bg-gray-200 py-3 rounded-xl transition flex items-center justify-center gap-2 font-medium"
             >
-              {isProcessing ? <Loader2 className="animate-spin" /> : <><Sparkles size={18} /> Analyze with Gemini</>}
+              {isProcessing
+                ? <Loader2 className="animate-spin" size={18} />
+                : <><Sparkles size={16}/> Analyze</>}
             </button>
           </div>
-          {error && <p className="text-red-500 text-xs mt-4 text-center font-bold">{error}</p>}
+
+          {error && (
+            <p className="text-red-400 text-xs mt-3">{error}</p>
+          )}
         </div>
 
         {analysis && (
-          <div className="space-y-6 animate-in">
-            <div className="flex gap-4">
-              <div className="flex-1 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <span className="text-[10px] font-black uppercase text-slate-400 block mb-1 tracking-widest">Tone</span>
-                <p className="text-xl font-bold text-indigo-600 tracking-tight">{analysis.tone}</p>
+          <div className="mt-14 space-y-8 animate-in">
+
+            <div className="grid grid-cols-2 gap-6">
+              <div className="bg-white/10 border border-white/20 rounded-xl p-5 backdrop-blur-xl">
+                <p className="text-xs uppercase tracking-widest text-gray-300 mb-2">Tone</p>
+                <p className="text-xl font-semibold">{analysis.tone}</p>
               </div>
-              <div className="flex-1 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-                <span className="text-[10px] font-black uppercase text-slate-400 block mb-1 tracking-widest">Tension</span>
+
+              <div className="bg-white/10 border border-white/20 rounded-xl p-5 backdrop-blur-xl">
+                <p className="text-xs uppercase tracking-widest text-gray-300 mb-2">Tension</p>
                 <div className="flex items-center gap-2">
-                  <p className={`text-xl font-bold ${analysis.score > 5 ? 'text-orange-500' : 'text-green-500'}`}>{analysis.score}/10</p>
-                  <AlertTriangle size={18} className={analysis.score > 5 ? 'text-orange-500' : 'text-green-500'} />
+                  <p className="text-xl font-semibold">{analysis.score}/10</p>
+                  <AlertTriangle size={18} />
                 </div>
               </div>
             </div>
 
-            <div className="bg-indigo-600 p-8 rounded-[2rem] text-white shadow-xl">
-              <h4 className="font-bold text-lg mb-2">The Verdict</h4>
-              <p className="text-indigo-50 leading-relaxed italic">"{analysis.explanation}"</p>
+            <div className="bg-white/10 border border-white/20 rounded-2xl p-6 backdrop-blur-xl">
+              <p className="italic">{analysis.explanation}</p>
             </div>
 
-            <div className="space-y-3">
-              <h4 className="font-black px-2 text-slate-400 text-[10px] uppercase tracking-widest">Smart Replies</h4>
+            <div className="space-y-4">
+              <p className="text-xs uppercase tracking-widest text-gray-300">
+                Suggested Replies
+              </p>
+
               {analysis.replies.map((reply, i) => (
-                <div key={i} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:border-indigo-300 transition-all cursor-pointer">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-indigo-500">{reply.icon}</span>
-                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-tighter">{reply.type}</span>
+                <div
+                  key={i}
+                  className="bg-white/10 border border-white/20 p-4 rounded-xl backdrop-blur-xl hover:bg-white/20 transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    {reply.icon}
+                    <span className="text-xs uppercase tracking-wide">
+                      {reply.type}
+                    </span>
                   </div>
-                  <p className="text-slate-800 font-medium">"{reply.msg}"</p>
+                  <p>"{reply.msg}"</p>
                 </div>
               ))}
             </div>
+
           </div>
         )}
+
       </main>
     </div>
   );
