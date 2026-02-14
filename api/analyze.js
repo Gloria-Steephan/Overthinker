@@ -7,19 +7,24 @@ export default async function handler(req, res) {
     const { text } = req.body;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${process.env.GEMINI_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-goog-api-key": process.env.GEMINI_KEY,
         },
         body: JSON.stringify({
-            contents: [
+          contents: [
+            {
+              parts: [
                 {
-                parts: [{ text: promptText }]
+                  text: text
                 }
-            ]
-            })
+              ]
+            }
+          ]
+        })
 
       }
     );

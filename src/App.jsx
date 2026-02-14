@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import Tesseract from 'tesseract.js';
 import { Upload, MessageSquare, AlertTriangle, ShieldCheck, Zap, Loader2, Sparkles } from 'lucide-react';
+import { analyzeText as analyzeWithGemini } from './api';
 
 const App = () => {
   const [text, setText] = useState('');
@@ -61,17 +62,8 @@ const App = () => {
       }
     `;
 try {
-    const response = await fetch("/api/analyze", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ promptText })
-    });
-    
-
-      const data = await response.json();
-      const rawJson = data.candidates[0].content.parts[0].text;
+    const data = await analyzeWithGemini(promptText);
+    const rawJson = data.candidates[0].content.parts[0].text;
       const result = JSON.parse(rawJson);
 
       const icons = {
